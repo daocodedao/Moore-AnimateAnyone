@@ -58,8 +58,8 @@ def main():
 
     config = OmegaConf.load(args.config)
 
-    ref_image_path = args.posVideoPath
-    pose_video_path = args.refImagePath
+    ref_image_path = args.refImagePath
+    pose_video_path = args.posVideoPath
 
     if config.weight_dtype == "fp16":
         weight_dtype = torch.bfloat16
