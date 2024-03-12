@@ -97,8 +97,9 @@ def save_videos_grid(videos: torch.Tensor, path: str, rescale=False, n_rows=6, f
         x = Image.fromarray(x)
 
         outputs.append(x)
-
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    dirPath = os.path.dirname(path)
+    print(f"dirPath={dirPath}")
+    os.makedirs(dirPath, exist_ok=True)
 
     save_videos_from_pil(outputs, path, fps)
 
