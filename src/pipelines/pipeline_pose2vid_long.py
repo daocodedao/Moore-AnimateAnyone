@@ -84,17 +84,17 @@ class Pose2VideoPipeline(DiffusionPipeline):
     def disable_vae_slicing(self):
         self.vae.disable_slicing()
 
-    def enable_sequential_cpu_offload(self, gpu_id=0):
-        if is_accelerate_available():
-            from accelerate import cpu_offload
-        else:
-            raise ImportError("Please install accelerate via `pip install accelerate`")
+    # def enable_sequential_cpu_offload(self, gpu_id=0):
+    #     if is_accelerate_available():
+    #         from accelerate import cpu_offload
+    #     else:
+    #         raise ImportError("Please install accelerate via `pip install accelerate`")
 
-        device = torch.device(f"cuda:{gpu_id}")
+    #     device = torch.device(f"cuda:{gpu_id}")
 
-        for cpu_offloaded_model in [self.unet, self.text_encoder, self.vae]:
-            if cpu_offloaded_model is not None:
-                cpu_offload(cpu_offloaded_model, device)
+    #     for cpu_offloaded_model in [self.unet, self.text_encoder, self.vae]:
+    #         if cpu_offloaded_model is not None:
+    #             cpu_offload(cpu_offloaded_model, device)
 
     @property
     def _execution_device(self):
