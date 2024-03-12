@@ -124,8 +124,11 @@ def main():
     # for ref_image_path in config["test_cases"].keys():
     #     # Each ref_image may correspond to multiple actions
     #     for pose_video_path in config["test_cases"][ref_image_path]:
+    # ref_image_path = "./configs/inference/ref_images/anyone-2.png"
+    # pose_video_path = "./configs/inference/pose_videos/anyone-video-2_kps.mp4"
+
     ref_image_path = "./configs/inference/ref_images/anyone-2.png"
-    pose_video_path = "./configs/inference/pose_videos/anyone-video-2_kps.mp4"
+    pose_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4-kps.mp4"
 
     ref_name = Path(ref_image_path).stem
     pose_name = Path(pose_video_path).stem.replace("_kps", "")
