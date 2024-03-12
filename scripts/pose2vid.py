@@ -39,7 +39,7 @@ def parse_args():
     parser.add_argument("--config")
     parser.add_argument("-W", type=int, default=512)
     parser.add_argument("-H", type=int, default=784)
-    parser.add_argument("-L", type=int, default=24)
+    parser.add_argument("-L", type=int, default=-1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cfg", type=float, default=3.5)
     parser.add_argument("--steps", type=int, default=30)
@@ -118,7 +118,7 @@ def main():
 
     date_str = datetime.now().strftime("%Y%m%d")
     time_str = datetime.now().strftime("%H%M")
-    save_dir_name = f"{time_str}--seed_{args.seed}-{args.W}x{args.H}"
+    save_dir_name = f"{time_str}--seed_{args.seed}-{width}x{height}"
 
     save_dir = Path(f"output/{date_str}/{save_dir_name}")
     save_dir.mkdir(exist_ok=True, parents=True)
@@ -141,11 +141,18 @@ def main():
     pose_tensor_list = []
     pose_images = read_frames(pose_video_path)
     src_fps = get_fps(pose_video_path)
+
+    frameLength = args.L
+    if frameLength == -1:
+        frameLength = len(pose_images)
+
+    api_logger.info(f"frameLength={frameLength}")
+
     api_logger.info(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
-    for pose_image_pil in pose_images[: args.L]:
+    for pose_image_pil in pose_images[: frameLength]:
         pose_tensor_list.append(pose_transform(pose_image_pil))
         pose_list.append(pose_image_pil)
 
@@ -154,7 +161,7 @@ def main():
         0
     )  # (1, c, 1, h, w)
     ref_image_tensor = repeat(
-        ref_image_tensor, "b c f h w -> b c (repeat f) h w", repeat=args.L
+        ref_image_tensor, "b c f h w -> b c (repeat f) h w", repeat=frameLength
     )
 
     pose_tensor = torch.stack(pose_tensor_list, dim=0)  # (f, c, h, w)
@@ -168,14 +175,14 @@ def main():
         pose_list,
         width,
         height,
-        args.L,
+        frameLength,
         args.steps,
         args.cfg,
         generator=generator,
     ).videos
 
     video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
-    videoName = f"{ref_name}_{pose_name}_{args.H}x{args.W}_{int(args.cfg)}_{time_str}"
+    videoName = f"{ref_name}_{pose_name}_{height}x{width}_{int(args.cfg)}_{time_str}"
     curVideoPath = f"{save_dir}/{videoName}.mp4"
     api_logger.info(f"saving video to {curVideoPath}")
     save_videos_grid(
