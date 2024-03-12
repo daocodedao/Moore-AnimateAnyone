@@ -23,6 +23,11 @@ from src.models.unet_3d import UNet3DConditionModel
 from src.pipelines.pipeline_pose2vid_long import Pose2VideoPipeline
 from src.utils.util import get_fps, read_frames, save_videos_grid
 
+
+from utils.logger_settings import api_logger
+from utils.Tos import TosService
+
+
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
@@ -52,7 +57,7 @@ def main():
     else:
         weight_dtype = torch.float32
 
-    print(f"weight_dtype={weight_dtype}")
+    api_logger.info(f"weight_dtype={weight_dtype}")
 
     vae = AutoencoderKL.from_pretrained(
         config.pretrained_vae_path,
@@ -131,7 +136,7 @@ def main():
     pose_tensor_list = []
     pose_images = read_frames(pose_video_path)
     src_fps = get_fps(pose_video_path)
-    print(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
+    api_logger.info(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
@@ -163,12 +168,29 @@ def main():
     ).videos
 
     video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
+    videoName = f"{ref_name}_{pose_name}_{args.H}x{args.W}_{int(args.cfg)}_{time_str}"
+    curVideoPath = f"{save_dir}/{videoName}.mp4",
+    api_logger.info(f"saving video to {curVideoPath}")
     save_videos_grid(
         video,
-        f"{save_dir}/{ref_name}_{pose_name}_{args.H}x{args.W}_{int(args.cfg)}_{time_str}.mp4",
+        curVideoPath,
         n_rows=3,
         fps=src_fps if args.fps is None else args.fps,
     )
+
+    bucketName = "magicphoto-1315251136"
+    resultUrlPre = f"animate/video/{videoName}/"
+    videoCnName=os.path.basename(curVideoPath)
+    reusultUrl = f"{resultUrlPre}{videoCnName}"
+    api_logger.info(f"上传视频 {curVideoPath}")
+    if os.path.exists(curVideoPath):
+        api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
+        TosService.upload_file(curVideoPath, reusultUrl, bucketName)
+        KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
+        playUrl = f"{KCDNPlayUrl}{reusultUrl}"
+        api_logger.info(f"播放地址= {playUrl}")
+        
+
 
 
 # scp -r  -P 10065 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/20240312  /Users/linzhiji/Downloads/ 
