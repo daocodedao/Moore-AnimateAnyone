@@ -16,6 +16,8 @@ from PIL import Image
 from torchvision import transforms
 from transformers import CLIPVisionModelWithProjection
 
+
+
 from configs.prompts.test_cases import TestCasesDict
 from src.models.pose_guider import PoseGuider
 from src.models.unet_2d_condition import UNet2DConditionModel
