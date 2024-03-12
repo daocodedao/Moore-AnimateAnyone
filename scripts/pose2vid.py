@@ -156,6 +156,8 @@ def main():
     pose_tensor = pose_tensor.transpose(0, 1)
     pose_tensor = pose_tensor.unsqueeze(0)
 
+    api_logger.info(f"pipe video")
+
     video = pipe(
         ref_image_pil,
         pose_list,
@@ -180,8 +182,7 @@ def main():
 
     bucketName = "magicphoto-1315251136"
     resultUrlPre = f"animate/video/{videoName}/"
-    videoCnName=os.path.basename(curVideoPath)
-    reusultUrl = f"{resultUrlPre}{videoCnName}"
+    reusultUrl = f"{resultUrlPre}{curVideoPath}"
     api_logger.info(f"上传视频 {curVideoPath}")
     if os.path.exists(curVideoPath):
         api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
@@ -189,7 +190,7 @@ def main():
         KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
         playUrl = f"{KCDNPlayUrl}{reusultUrl}"
         api_logger.info(f"播放地址= {playUrl}")
-        
+
 
 
 
