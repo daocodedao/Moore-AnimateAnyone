@@ -49,7 +49,7 @@ class AnimateController:
         if self.pipeline is None:
             vae = AutoencoderKL.from_pretrained(
                 self.config.pretrained_vae_path,
-            ).to("cuda", dtype=self.weight_dtype)
+            ).to(cuda1, dtype=self.weight_dtype)
 
             reference_unet = UNet2DConditionModel.from_pretrained(
                 self.config.pretrained_base_model_path,
@@ -66,12 +66,12 @@ class AnimateController:
             ).to(dtype=self.weight_dtype, device=cuda1)
 
             pose_guider = PoseGuider(320, block_out_channels=(16, 32, 96, 256)).to(
-                dtype=self.weight_dtype, device="cuda"
+                dtype=self.weight_dtype, device=cuda1
             )
 
             image_enc = CLIPVisionModelWithProjection.from_pretrained(
                 self.config.image_encoder_path
-            ).to(dtype=self.weight_dtype, device="cuda")
+            ).to(dtype=self.weight_dtype, device=cuda1)
             sched_kwargs = OmegaConf.to_container(infer_config.noise_scheduler_kwargs)
             scheduler = DDIMScheduler(**sched_kwargs)
 
@@ -95,7 +95,7 @@ class AnimateController:
                 pose_guider=pose_guider,
                 scheduler=scheduler,
             )
-            pipe = pipe.to("cuda", dtype=self.weight_dtype)
+            pipe = pipe.to(cuda1, dtype=self.weight_dtype)
             self.pipeline = pipe
 
         pose_images = read_frames(pose_video_path)
