@@ -171,5 +171,7 @@ def main():
     )
 
 
+# scp -r  -P 10065 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/20240312  /Users/linzhiji/Downloads/ 
+
 if __name__ == "__main__":
     main()
