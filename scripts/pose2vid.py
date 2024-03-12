@@ -23,6 +23,9 @@ from src.models.unet_3d import UNet3DConditionModel
 from src.pipelines.pipeline_pose2vid_long import Pose2VideoPipeline
 from src.utils.util import get_fps, read_frames, save_videos_grid
 
+dtype = torch.bfloat16
+cuda0 = "cuda:0"
+cuda1 = "cuda:1"
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -49,14 +52,16 @@ def main():
     else:
         weight_dtype = torch.float32
 
+    print(f"weight_dtype={weight_dtype}")
+
     vae = AutoencoderKL.from_pretrained(
         config.pretrained_vae_path,
-    ).to("cuda", dtype=weight_dtype)
+    ).to(cuda1, dtype=weight_dtype)
 
     reference_unet = UNet2DConditionModel.from_pretrained(
         config.pretrained_base_model_path,
         subfolder="unet",
-    ).to(dtype=weight_dtype, device="cuda")
+    ).to(dtype=weight_dtype, device=cuda1)
 
     inference_config_path = config.inference_config
     infer_config = OmegaConf.load(inference_config_path)
@@ -65,15 +70,15 @@ def main():
         config.motion_module_path,
         subfolder="unet",
         unet_additional_kwargs=infer_config.unet_additional_kwargs,
-    ).to(dtype=weight_dtype, device="cuda")
+    ).to(dtype=weight_dtype, device=cuda1)
 
     pose_guider = PoseGuider(320, block_out_channels=(16, 32, 96, 256)).to(
-        dtype=weight_dtype, device="cuda"
+        dtype=weight_dtype, device=cuda1
     )
 
     image_enc = CLIPVisionModelWithProjection.from_pretrained(
         config.image_encoder_path
-    ).to(dtype=weight_dtype, device="cuda")
+    ).to(dtype=weight_dtype, device=cuda1)
 
     sched_kwargs = OmegaConf.to_container(infer_config.noise_scheduler_kwargs)
     scheduler = DDIMScheduler(**sched_kwargs)
@@ -102,7 +107,7 @@ def main():
         pose_guider=pose_guider,
         scheduler=scheduler,
     )
-    pipe = pipe.to("cuda", dtype=weight_dtype)
+    pipe = pipe.to(cuda1, dtype=weight_dtype)
 
     date_str = datetime.now().strftime("%Y%m%d")
     time_str = datetime.now().strftime("%H%M")
@@ -111,56 +116,59 @@ def main():
     save_dir = Path(f"output/{date_str}/{save_dir_name}")
     save_dir.mkdir(exist_ok=True, parents=True)
 
-    for ref_image_path in config["test_cases"].keys():
-        # Each ref_image may correspond to multiple actions
-        for pose_video_path in config["test_cases"][ref_image_path]:
-            ref_name = Path(ref_image_path).stem
-            pose_name = Path(pose_video_path).stem.replace("_kps", "")
+    # for ref_image_path in config["test_cases"].keys():
+    #     # Each ref_image may correspond to multiple actions
+    #     for pose_video_path in config["test_cases"][ref_image_path]:
+    ref_image_path = "./configs/inference/ref_images/anyone-2.png"
+    pose_video_path = "./configs/inference/pose_videos/anyone-video-2_kps.mp4"
 
-            ref_image_pil = Image.open(ref_image_path).convert("RGB")
+    ref_name = Path(ref_image_path).stem
+    pose_name = Path(pose_video_path).stem.replace("_kps", "")
 
-            pose_list = []
-            pose_tensor_list = []
-            pose_images = read_frames(pose_video_path)
-            src_fps = get_fps(pose_video_path)
-            print(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
-            pose_transform = transforms.Compose(
-                [transforms.Resize((height, width)), transforms.ToTensor()]
-            )
-            for pose_image_pil in pose_images[: args.L]:
-                pose_tensor_list.append(pose_transform(pose_image_pil))
-                pose_list.append(pose_image_pil)
+    ref_image_pil = Image.open(ref_image_path).convert("RGB")
 
-            ref_image_tensor = pose_transform(ref_image_pil)  # (c, h, w)
-            ref_image_tensor = ref_image_tensor.unsqueeze(1).unsqueeze(
-                0
-            )  # (1, c, 1, h, w)
-            ref_image_tensor = repeat(
-                ref_image_tensor, "b c f h w -> b c (repeat f) h w", repeat=args.L
-            )
+    pose_list = []
+    pose_tensor_list = []
+    pose_images = read_frames(pose_video_path)
+    src_fps = get_fps(pose_video_path)
+    print(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
+    pose_transform = transforms.Compose(
+        [transforms.Resize((height, width)), transforms.ToTensor()]
+    )
+    for pose_image_pil in pose_images[: args.L]:
+        pose_tensor_list.append(pose_transform(pose_image_pil))
+        pose_list.append(pose_image_pil)
 
-            pose_tensor = torch.stack(pose_tensor_list, dim=0)  # (f, c, h, w)
-            pose_tensor = pose_tensor.transpose(0, 1)
-            pose_tensor = pose_tensor.unsqueeze(0)
+    ref_image_tensor = pose_transform(ref_image_pil)  # (c, h, w)
+    ref_image_tensor = ref_image_tensor.unsqueeze(1).unsqueeze(
+        0
+    )  # (1, c, 1, h, w)
+    ref_image_tensor = repeat(
+        ref_image_tensor, "b c f h w -> b c (repeat f) h w", repeat=args.L
+    )
 
-            video = pipe(
-                ref_image_pil,
-                pose_list,
-                width,
-                height,
-                args.L,
-                args.steps,
-                args.cfg,
-                generator=generator,
-            ).videos
+    pose_tensor = torch.stack(pose_tensor_list, dim=0)  # (f, c, h, w)
+    pose_tensor = pose_tensor.transpose(0, 1)
+    pose_tensor = pose_tensor.unsqueeze(0)
 
-            video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
-            save_videos_grid(
-                video,
-                f"{save_dir}/{ref_name}_{pose_name}_{args.H}x{args.W}_{int(args.cfg)}_{time_str}.mp4",
-                n_rows=3,
-                fps=src_fps if args.fps is None else args.fps,
-            )
+    video = pipe(
+        ref_image_pil,
+        pose_list,
+        width,
+        height,
+        args.L,
+        args.steps,
+        args.cfg,
+        generator=generator,
+    ).videos
+
+    video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
+    save_videos_grid(
+        video,
+        f"{save_dir}/{ref_name}_{pose_name}_{args.H}x{args.W}_{int(args.cfg)}_{time_str}.mp4",
+        n_rows=3,
+        fps=src_fps if args.fps is None else args.fps,
+    )
 
 
 if __name__ == "__main__":
