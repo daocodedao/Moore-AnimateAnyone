@@ -3,6 +3,9 @@ from pathlib import Path, PurePosixPath
 
 from huggingface_hub import hf_hub_download
 
+os.environ['HTTP_PROXY'] = '192.168.0.77:18808'
+os.environ['HTTPS_PROXY'] = '192.168.0.77:18808'
+
 
 def prepare_base_model():
     print(f'Preparing base stable-diffusion-v1-5 weights...')
