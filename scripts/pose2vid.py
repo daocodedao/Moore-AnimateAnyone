@@ -45,7 +45,7 @@ def main():
     config = OmegaConf.load(args.config)
 
     if config.weight_dtype == "fp16":
-        weight_dtype = torch.float16
+        weight_dtype = torch.bfloat16
     else:
         weight_dtype = torch.float32
 

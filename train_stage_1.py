@@ -197,8 +197,8 @@ def log_validation(
 
             pil_images.append({"name": f"{ref_name}_{pose_name}", "img": canvas})
 
-    vae = vae.to(dtype=torch.float16)
-    image_enc = image_enc.to(dtype=torch.float16)
+    vae = vae.to(dtype=torch.bfloat16)
+    image_enc = image_enc.to(dtype=torch.bfloat16)
 
     del pipe
     torch.cuda.empty_cache()
@@ -240,7 +240,7 @@ def main(cfg):
         os.makedirs(save_dir)
 
     if cfg.weight_dtype == "fp16":
-        weight_dtype = torch.float16
+        weight_dtype = torch.bfloat16
     elif cfg.weight_dtype == "fp32":
         weight_dtype = torch.float32
     else:

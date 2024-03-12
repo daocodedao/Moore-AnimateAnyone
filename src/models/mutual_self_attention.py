@@ -58,7 +58,7 @@ class ReferenceAttentionControl:
         style_fidelity,
         reference_attn,
         reference_adain,
-        dtype=torch.float16,
+        dtype=torch.bfloat16,
         batch_size=1,
         num_images_per_prompt=1,
         device=torch.device("cpu"),
@@ -299,7 +299,7 @@ class ReferenceAttentionControl:
                 module.bank = []
                 module.attn_weight = float(i) / float(len(attn_modules))
 
-    def update(self, writer, dtype=torch.float16):
+    def update(self, writer, dtype=torch.bfloat16):
         if self.reference_attn:
             if self.fusion_blocks == "midup":
                 reader_attn_modules = [

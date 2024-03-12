@@ -18,12 +18,14 @@ from src.models.unet_3d import UNet3DConditionModel
 from src.pipelines.pipeline_pose2vid_long import Pose2VideoPipeline
 from src.utils.util import get_fps, read_frames, save_videos_grid
 
-
+dtype = torch.bfloat16
+cuda0 = "cuda:0"
+cuda1 = "cuda:1"
 class AnimateController:
     def __init__(
         self,
         config_path="./configs/prompts/animation.yaml",
-        weight_dtype=torch.float16,
+        weight_dtype=torch.bfloat16,
     ):
         # Read pretrained weights path from config
         self.config = OmegaConf.load(config_path)
@@ -52,7 +54,7 @@ class AnimateController:
             reference_unet = UNet2DConditionModel.from_pretrained(
                 self.config.pretrained_base_model_path,
                 subfolder="unet",
-            ).to(dtype=self.weight_dtype, device="cuda")
+            ).to(dtype=self.weight_dtype, device=cuda1)
 
             inference_config_path = self.config.inference_config
             infer_config = OmegaConf.load(inference_config_path)
@@ -61,7 +63,7 @@ class AnimateController:
                 self.config.motion_module_path,
                 subfolder="unet",
                 unet_additional_kwargs=infer_config.unet_additional_kwargs,
-            ).to(dtype=self.weight_dtype, device="cuda")
+            ).to(dtype=self.weight_dtype, device=cuda1)
 
             pose_guider = PoseGuider(320, block_out_channels=(16, 32, 96, 256)).to(
                 dtype=self.weight_dtype, device="cuda"
