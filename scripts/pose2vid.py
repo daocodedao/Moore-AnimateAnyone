@@ -27,7 +27,7 @@ from src.utils.util import get_fps, read_frames, save_videos_grid
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
-#  python -m scripts.pose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 -L 64
+#  python -m scripts.pose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
 
 
 dtype = torch.bfloat16
@@ -40,6 +40,10 @@ def parse_args():
     parser.add_argument("-W", type=int, default=512)
     parser.add_argument("-H", type=int, default=784)
     parser.add_argument("-L", type=int, default=-1)
+    
+    parser.add_argument("--posVideoPath", type=str)
+    parser.add_argument("--refImagePath", type=str)
+
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cfg", type=float, default=3.5)
     parser.add_argument("--steps", type=int, default=30)
@@ -53,6 +57,9 @@ def main():
     args = parse_args()
 
     config = OmegaConf.load(args.config)
+
+    ref_image_path = args.posVideoPath
+    pose_video_path = args.refImagePath
 
     if config.weight_dtype == "fp16":
         weight_dtype = torch.bfloat16
@@ -129,8 +136,7 @@ def main():
     # ref_image_path = "./configs/inference/ref_images/anyone-2.png"
     # pose_video_path = "./configs/inference/pose_videos/anyone-video-2_kps.mp4"
 
-    ref_image_path = "./configs/inference/ref_images/anyone-2.png"
-    pose_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4"
+
 
     ref_name = Path(ref_image_path).stem
     pose_name = Path(pose_video_path).stem.replace("_kps", "")
