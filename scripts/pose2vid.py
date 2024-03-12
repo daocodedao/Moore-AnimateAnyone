@@ -27,6 +27,8 @@ from src.utils.util import get_fps, read_frames, save_videos_grid
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
+#  python -m scripts.pose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 -L 64
+
 
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
