@@ -305,6 +305,7 @@ class Pose2VideoPipeline(DiffusionPipeline):
         width = width or self.unet.config.sample_size * self.vae_scale_factor
 
         device = self._execution_device
+        print(f"_execution_device:{device}")
 
         do_classifier_free_guidance = guidance_scale > 1.0
 
