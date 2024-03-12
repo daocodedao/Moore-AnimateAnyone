@@ -6,6 +6,9 @@ from src.utils.util import get_fps, read_frames, save_videos_from_pil
 import numpy as np
 
 
+# python tools/vid2pose.py --video_path ./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4
+
+
 if __name__ == "__main__":
     import argparse
 
