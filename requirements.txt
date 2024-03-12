@@ -40,3 +40,5 @@ onnxruntime-silicon==1.13.1; sys_platform == 'darwin' and platform_machine == 'a
 
 xformers==0.0.22
 decord==0.6.0
+
+cos-python-sdk-v5
