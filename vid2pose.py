@@ -4,9 +4,9 @@ from pathlib import Path
 
 from src.utils.util import get_fps, read_frames, save_videos_from_pil
 import numpy as np
+from utils.logger_settings import api_logger
 
-
-# python tools/vid2pose.py --video_path ./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4
+# python vid2pose.py --video_path ./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4
 
 
 if __name__ == "__main__":
@@ -37,5 +37,5 @@ if __name__ == "__main__":
 
         kps_results.append(result)
 
-    print(out_path)
+    api_logger.info(f"out_path={out_path}")
     save_videos_from_pil(kps_results, out_path, fps=fps)
