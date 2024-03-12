@@ -122,7 +122,8 @@ def main():
         scheduler=scheduler,
     )
     pipe = pipe.to(cuda1, dtype=weight_dtype)
-
+    pipe.enable_sequential_cpu_offload()
+    
     date_str = datetime.now().strftime("%Y%m%d")
     time_str = datetime.now().strftime("%H%M")
     save_dir_name = f"{time_str}--seed_{args.seed}-{width}x{height}"
