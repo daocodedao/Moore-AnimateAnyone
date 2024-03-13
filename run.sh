@@ -1,0 +1,1 @@
+/data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/girl/' --processId '6TvTJIxZca4'
