@@ -121,9 +121,8 @@ def main():
         denoising_unet=denoising_unet,
         pose_guider=pose_guider,
         scheduler=scheduler,
-        device_map='auto'
     )
-    pipe = pipe.to(dtype=weight_dtype)
+    pipe = pipe.to(dtype=weight_dtype, device=cuda0)
     pipe.enable_vae_slicing()
     # pipe.enable_sequential_cpu_offload()
 
