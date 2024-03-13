@@ -359,7 +359,7 @@ def main():
         api_logger.info("6---------上传到腾讯")
         bucketName = "magicphoto-1315251136"
         resultUrlPre = f"dance/video/{processId}/"
-        reusultUrl = f"{resultUrlPre}{curVideoPath}"
+        reusultUrl = f"{resultUrlPre}{processId}-{refImageName}.mp4"
         api_logger.info(f"上传视频 {curVideoPath}")
         if os.path.exists(curVideoPath):
             api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
