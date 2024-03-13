@@ -36,6 +36,7 @@ from utils.Tos import TosService
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
+MaxPoseVideoDuration = 5
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -99,14 +100,14 @@ def initResource(args, config):
 
     # load pretrained weights
     denoising_unet.load_state_dict(
-        torch.load(config.denoising_unet_path, map_location=cuda1),
+        torch.load(config.denoising_unet_path, map_location="cpu"),
         strict=False,
     )
     reference_unet.load_state_dict(
-        torch.load(config.reference_unet_path, map_location=cuda1),
+        torch.load(config.reference_unet_path, map_location="cpu"),
     )
     pose_guider.load_state_dict(
-        torch.load(config.pose_guider_path, map_location=cuda1),
+        torch.load(config.pose_guider_path, map_location="cpu"),
     )
 
     pipe:Pose2VideoPipeline = Pose2VideoPipeline(
@@ -119,7 +120,7 @@ def initResource(args, config):
     )
     pipe = pipe.to(dtype=weight_dtype, device=cuda0)
     pipe.enable_vae_slicing()
-# pipe.enable_sequential_cpu_offload()
+    # pipe.enable_sequential_cpu_offload()
     return pipe, generator
 
 def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVideoPath):
@@ -138,7 +139,7 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         frameCount = len(pose_images)
 
     api_logger.info(f"frameCount={frameCount}")
-    api_logger.info(f"姿势视频 {len(pose_images)} 帧, 帧率 {src_fps} fps")
+    api_logger.info(f"姿势视频有 {len(pose_images)} 帧, 帧率 {int(src_fps)} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
@@ -208,9 +209,9 @@ def main():
     outGenDir = os.path.join(outDir, "gen")
 
     poseVideoList = []
-    if videoDuraion > 10:
-        api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，10秒一切割")
-        split_video(pose_video_path, 3, outSplitDir)
+    if videoDuraion > MaxPoseVideoDuration:
+        api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{MaxPoseVideoDuration}秒一切割")
+        split_video(pose_video_path, MaxPoseVideoDuration, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
         api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
     else:
