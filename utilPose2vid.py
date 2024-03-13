@@ -30,6 +30,9 @@ from utils.Tos import TosService
 #  python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
 
 
+# scp -r  -P 10065 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
+
+
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
@@ -122,6 +125,7 @@ def initResource(args, config):
 def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVideoPath):
     api_logger.info(f"准备生成视频， poseVideo={pose_video_path}, refImage={ref_image_path}, outVideo={outVideoPath}")
     width, height = args.W, args.H
+    save_individual_videos = True
     ref_image_pil = Image.open(ref_image_path).convert("RGB")
 
     pose_list = []
@@ -167,13 +171,24 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         generator=generator,
     ).videos
 
-    video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
-    save_videos_grid(
-        video,
-        outVideoPath,
-        n_rows=3,
-        fps=src_fps if args.fps is None else args.fps,
-    )
+    if not save_individual_videos:
+        video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
+        # save_videos_from_pil
+        save_videos_grid(
+            video,
+            outVideoPath,
+            n_rows=3,
+            fps=src_fps if args.fps is None else args.fps,
+        )
+    else:
+        save_videos_grid(
+            video,
+            outVideoPath,
+            n_rows=3,
+            fps=src_fps if args.fps is None else args.fps,
+        )
+
+
 
 def main():
     args = parse_args()
@@ -232,8 +247,6 @@ def main():
 
 
 
-
-# scp -r  -P 10065 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/20240312  /Users/linzhiji/Downloads/ 
 
 if __name__ == "__main__":
     main()
