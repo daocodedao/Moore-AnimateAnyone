@@ -27,7 +27,7 @@ from src.utils.util import *
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
-
+from utilVid2pose import *
 #  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png'
 
 
@@ -48,8 +48,10 @@ def parse_args():
     parser.add_argument("-H", type=int, default=784)
     parser.add_argument("-L", type=int, default=-1)
     
-    parser.add_argument("--posVideoPath", type=str)
+    parser.add_argument("--srcVideoPath", type=str)
+    # parser.add_argument("--posVideoPath", type=str)
     parser.add_argument("--refImagePath", type=str)
+    parser.add_argument("--processId", type=str)
 
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cfg", type=float, default=3.5)
@@ -126,16 +128,16 @@ def initResource(args, config):
     # pipe.enable_sequential_cpu_offload()
     return pipe, generator
 
-def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVideoPath):
-    api_logger.info(f"准备生成视频， poseVideo={pose_video_path}, refImage={ref_image_path}, outVideo={outVideoPath}")
+def generateVideo(args, pipe, generator, videoPosePath, ref_image_path, outVideoPath):
+    api_logger.info(f"准备生成视频， poseVideo={videoPosePath}, refImage={ref_image_path}, outVideo={outVideoPath}")
     width, height = args.W, args.H
     save_individual_videos = True
     ref_image_pil = Image.open(ref_image_path).convert("RGB")
 
     pose_list = []
     pose_tensor_list = []
-    pose_images = read_frames(pose_video_path)
-    src_fps = get_fps(pose_video_path)
+    pose_images = read_frames(videoPosePath)
+    src_fps = get_fps(videoPosePath)
 
 
     frameCount = args.L
@@ -143,7 +145,7 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         frameCount = len(pose_images)
 
     api_logger.info(f"frameCount={frameCount}")
-    api_logger.info(f"{pose_video_path} 视频有 {len(pose_images)} 帧, 帧率 {int(src_fps)} fps")
+    api_logger.info(f"{videoPosePath} 视频有 {len(pose_images)} 帧, 帧率 {int(src_fps)} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
@@ -194,80 +196,140 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         )
 
 
-
-
 def main():
     args = parse_args()
 
     config = OmegaConf.load(args.config)
     
+    api_logger.info("1---------准备各种文件")
     ref_image_path = args.refImagePath
-    pose_video_path = args.posVideoPath
+    # videoPosePath = args.posVideoPath
+    src_video_path = args.srcVideoPath
+    processId = args.processId
 
-    pipe, generator = initResource(args, config)
-    # width, height = args.W, args.H
+    outDir = f"/data/work/dance/{processId}"
+    os.makedirs(outDir, exist_ok=True)
 
-    videoDuraion = video_duration(pose_video_path)
-    processId = os.path.basename(pose_video_path).split(".")[0]
-    outDir = f"output/{processId}"
-    fpsChangedVideoPath = os.path.join(outDir, "processId-fps-fixed.mp4")
+    videoSrcPath = os.path.join(outDir, f"{processId}.mp4")
+    curVideoPath = videoSrcPath
+    videoPosePath = os.path.join(outDir, f"{processId}-pose.mp4")
+
+    videoSrcFixFpsPath = os.path.join(outDir, f"{processId}-fps-fixed.mp4")
+
+    videoAudioPath = os.path.join(outDir, f"{processId}.wav")
+    videoAudioInsPath = os.path.join(outDir, f"{processId}-ins.wav")
+    
+    videoComposePath = os.path.join(outDir, f"{processId}-composed.mp4")
+    videoComposeBGMusicPath = os.path.join(outDir, f"{processId}-composed-bg.mp4")
 
     # pose 切割视频输出文件夹
     outSplitDir = os.path.join(outDir, "split")
     # 最终合成视频输出文件夹
     outGenDir = os.path.join(outDir, "gen")
 
+    api_logger.info("---------检查视频文件和POSE文件")
+    if not os.path.exists(videoSrcPath):
+        api_logger.info(f"拷贝文件从 {src_video_path} 到 {videoSrcPath}")
+        shutil.copy(src_video_path, videoSrcPath)
+
+    if not os.path.exists(videoPosePath):
+        api_logger.info(f"生成POSE文件")
+        export_pose_video(videoSrcPath, videoPosePath)
+
+
+    api_logger.info("---------调整POSE视频FPS")
+    src_fps = get_fps(videoPosePath)
+    if not os.path.exists(videoSrcFixFpsPath) and  int(src_fps) > kFixedFps:
+        api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
+        changeVideoFps(videoPosePath, kFixedFps, videoSrcFixFpsPath)
+        videoPosePath = videoSrcFixFpsPath
+        api_logger.info(f"fps调整完成，现在的videoPosePath={videoPosePath}")
+
+    api_logger.info("---------是否要提前视频里的音频")
+    if not os.path.exists(videoAudioPath):
+        extractAudioFromVideo(videoSrcPath, videoAudioPath)
+
+    api_logger.info("---------是否要提前背景音乐")
+    if not os.path.exists(videoAudioInsPath):
+        extractBgMusic(videoAudioPath, processId, videoAudioInsPath)
+
+    api_logger.info("---------确保切割后的文件夹存在并清空")
     shutil.rmtree(outSplitDir, ignore_errors=True)
     os.makedirs(outSplitDir, exist_ok=True)
 
-    shutil.rmtree(outGenDir, ignore_errors=True)
+    # shutil.rmtree(outGenDir, ignore_errors=True)
     os.makedirs(outGenDir, exist_ok=True)
 
-    src_fps = get_fps(pose_video_path)
-    if int(src_fps) > kFixedFps:
-        api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
-        changeVideoFps(pose_video_path, kFixedFps, fpsChangedVideoPath)
-        pose_video_path = fpsChangedVideoPath
-        api_logger.info(f"fps调整完成，现在的pose_video_path={pose_video_path}")
+    videoDuraion = video_duration(videoPosePath)
 
+
+    api_logger.info("2---------初始化models")
+    pipe, generator = initResource(args, config)
+
+
+    api_logger.info("3---------检查切割POSE视频")
     poseVideoList = []
     if videoDuraion > kMaxPoseVideoDuration:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
-        split_video(pose_video_path, kMaxPoseVideoDuration, outSplitDir)
+        split_video(videoPosePath, kMaxPoseVideoDuration, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
         api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
     else:
         api_logger.info(f"pose视频时长{videoDuraion}, 无需要切割视频")
-        poseVideoList.append(pose_video_path)
+        poseVideoList.append(videoPosePath)
 
-    outVideoPathList = []
-    poseVideoList.sort()
-    for idx, video_path in enumerate(poseVideoList):
-        outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
-        try:
-            generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
-            if os.path.exists(outVideoPath):
-                api_logger.info(f"生成视频成功，路径:{outVideoPath}")
-                outVideoPathList.append(outVideoPath)
-            else:
-                api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
-        except Exception as e:
-            api_logger.error(f"生成视频失败，路径:{outVideoPath}")
-            api_logger.error(e)
+    api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
+
+    model_pths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
+    if len(model_pths) == 0:
+        outVideoPathList = []
+        poseVideoList.sort()
+        for idx, video_path in enumerate(poseVideoList):
+            outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
+            try:
+                generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
+                if os.path.exists(outVideoPath):
+                    api_logger.info(f"生成视频成功，路径:{outVideoPath}")
+                    outVideoPathList.append(outVideoPath)
+                else:
+                    api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
+            except Exception as e:
+                api_logger.error(f"生成视频失败，路径:{outVideoPath}")
+                api_logger.error(e)
+    else:
+        api_logger.info("临时处理，无需合成")
+
+    api_logger.info("4---------结束-合成视频")
+
+    api_logger.info("5---------合并视频,")
+    model_pths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
+    model_pths.sort()
+    api_logger.info(f"共有 {len(model_pths)}")
+    concatenate(model_pths, videoComposePath)
+    curVideoPath = videoComposePath
 
 
-    
+    api_logger.info("6---------添加背景音乐")
+    command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
+    api_logger.info(f"命令：")
+    api_logger.info(command)
+    result = subprocess.check_output(command, shell=True)
+    log_subprocess_output(result)
+    api_logger.info(f'完成背景音乐合并任务: {videoComposeBGMusicPath}')
+    curVideoPath = videoComposeBGMusicPath
 
-    # bucketName = "magicphoto-1315251136"
-    # resultUrlPre = f"animate/video/{videoName}/"
-    # reusultUrl = f"{resultUrlPre}{curVideoPath}"
-    # api_logger.info(f"上传视频 {curVideoPath}")
-    # if os.path.exists(curVideoPath):
-    #     api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
-    #     TosService.upload_file(curVideoPath, reusultUrl, bucketName)
-    #     KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
-    #     playUrl = f"{KCDNPlayUrl}{reusultUrl}"
-    #     api_logger.info(f"播放地址= {playUrl}")
+
+    api_logger.info("6---------上传到腾讯")
+    bucketName = "magicphoto-1315251136"
+    resultUrlPre = f"dance/video/{processId}/"
+    reusultUrl = f"{resultUrlPre}{curVideoPath}"
+    api_logger.info(f"上传视频 {curVideoPath}")
+    if os.path.exists(curVideoPath):
+        api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
+        TosService.upload_file(curVideoPath, reusultUrl, bucketName)
+        KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
+        playUrl = f"{KCDNPlayUrl}{reusultUrl}"
+        api_logger.info(f"播放地址= {playUrl}")
 
 
 
