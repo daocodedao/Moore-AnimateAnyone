@@ -123,7 +123,7 @@ def main():
     )
     pipe = pipe.to(cuda1, dtype=weight_dtype)
     pipe.enable_vae_slicing()
-    pipe.enable_sequential_cpu_offload()
+    # pipe.enable_sequential_cpu_offload()
 
     date_str = datetime.now().strftime("%Y%m%d")
     time_str = datetime.now().strftime("%H%M")

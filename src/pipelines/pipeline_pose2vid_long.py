@@ -104,8 +104,11 @@ class Pose2VideoPipeline(DiffusionPipeline):
     @property
     def _execution_device(self):
         api_logger.info(f"_execution_device device={self.device}")
+        # if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
         if self.device != torch.device("meta") or not hasattr(self.denoising_unet, "_hf_hook"):
             return self.device
+
+        # for module in self.unet.modules():
         for module in self.denoising_unet.modules():
             if (
                 hasattr(module, "_hf_hook")
@@ -366,12 +369,14 @@ class Pose2VideoPipeline(DiffusionPipeline):
         **kwargs,
     ):
         # Default height and width to unet
+        # height = height or self.unet.config.sample_size * self.vae_scale_factor
+        # width = width or self.unet.config.sample_size * self.vae_scale_factor
+        
         height = height or self.denoising_unet.config.sample_size * self.vae_scale_factor
         width = width or self.denoising_unet.config.sample_size * self.vae_scale_factor
 
         device = self._execution_device
         api_logger.info(f"__call__ device={self.device}")
-
 
         do_classifier_free_guidance = guidance_scale > 1.0
 
