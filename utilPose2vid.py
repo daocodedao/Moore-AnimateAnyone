@@ -99,14 +99,14 @@ def initResource(args, config):
 
     # load pretrained weights
     denoising_unet.load_state_dict(
-        torch.load(config.denoising_unet_path, map_location="cpu"),
+        torch.load(config.denoising_unet_path, map_location=cuda1),
         strict=False,
     )
     reference_unet.load_state_dict(
-        torch.load(config.reference_unet_path, map_location="cpu"),
+        torch.load(config.reference_unet_path, map_location=cuda1),
     )
     pose_guider.load_state_dict(
-        torch.load(config.pose_guider_path, map_location="cpu"),
+        torch.load(config.pose_guider_path, map_location=cuda1),
     )
 
     pipe:Pose2VideoPipeline = Pose2VideoPipeline(
@@ -138,7 +138,7 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         frameCount = len(pose_images)
 
     api_logger.info(f"frameCount={frameCount}")
-    api_logger.info(f"pose video has {len(pose_images)} frames, with {src_fps} fps")
+    api_logger.info(f"姿势视频 {len(pose_images)} 帧, 帧率 {src_fps} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
