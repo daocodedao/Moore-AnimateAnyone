@@ -28,12 +28,12 @@ import shutil
 
 
 processId = "6TvTJIxZca4"
-outDir = "./output/"
+outDir = "/data/work/Moore-AnimateAnyone/output/"
 
 outVideoDir = os.path.join(outDir, processId)
 os.makedirs(outVideoDir, exist_ok=True)
 
-src_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4"
+src_video_path = "/data/work/Moore-AnimateAnyone/youtube/6TvTJIxZca4/6TvTJIxZca4.mp4"
 out_audio_path = os.path.join(outVideoDir, f"{processId}.wav")
 audioInsPath = os.path.join(outVideoDir, f"{processId}-ins.wav")
 
