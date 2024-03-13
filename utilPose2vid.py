@@ -311,7 +311,7 @@ def main():
 
     api_logger.info("6---------添加背景音乐")
     # command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
-    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} c:v copy -c:a aac {videoComposeBGMusicPath}"
+    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} -shortest {videoComposeBGMusicPath}"
 
 
 
