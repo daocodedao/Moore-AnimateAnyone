@@ -27,9 +27,14 @@ import shutil
 # print("done")
 
 
+processId = "6TvTJIxZca4"
+outDir = "./output/"
+
+outVideoDir = os.path.join(outDir, processId)
+
 src_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4"
-out_audio_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4.wav"
-audioInsPath = "./youtube/6TvTJIxZca4/6TvTJIxZca4-ins.wav"
+out_audio_path = os.path.join(outVideoDir, f"{processId}.wav")
+audioInsPath = os.path.join(outVideoDir, f"{processId}-ins.wav")
 
 
 extractAudioFromVideo(src_video_path, out_audio_path)
