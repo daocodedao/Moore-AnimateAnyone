@@ -324,7 +324,7 @@ def main():
             for idx, video_path in enumerate(poseVideoList):
                 outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
                 try:
-                    generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
+                    generateVideo(args, pipe, generator, video_path, reImagePath, outVideoPath)
                     if os.path.exists(outVideoPath):
                         api_logger.info(f"生成视频成功，路径:{outVideoPath}")
                         outVideoPathList.append(outVideoPath)
