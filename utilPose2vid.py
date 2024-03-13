@@ -221,7 +221,7 @@ def main():
 
     elif os.path.isfile(ref_image_path):
         api_logger.info("ref 是文件")
-        refImagePaths.append(ref_image_path)
+        refImagePaths = refImagePaths + ref_image_path
 
     api_logger.info(refImagePaths)
         
