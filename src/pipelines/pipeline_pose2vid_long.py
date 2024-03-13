@@ -92,7 +92,7 @@ class Pose2VideoPipeline(DiffusionPipeline):
 
         device = torch.device(f"cuda:{gpu_id}")
 
-        for cpu_offloaded_model in [self.denoising_unet, self.image_encoder,  self.text_encoder, self.vae]:
+        for cpu_offloaded_model in [self.denoising_unet,  self.text_encoder, self.vae]:
             if cpu_offloaded_model is not None:
                 cpu_offload(cpu_offloaded_model, device)
 
