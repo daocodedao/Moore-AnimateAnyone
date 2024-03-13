@@ -28,7 +28,7 @@ from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
 from utilVid2pose import *
-#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png'
+#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png'
 
 
 # scp -r  -P 10080 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
