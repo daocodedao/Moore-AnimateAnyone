@@ -222,6 +222,8 @@ def main():
     elif os.path.isfile(ref_image_path):
         api_logger.info("ref 是文件")
         refImagePaths.append(ref_image_path)
+
+    api_logger.info(refImagePaths)
         
     if len(refImagePaths) == 0:
         api_logger.error("ref 没有图片, 退出")
@@ -295,9 +297,7 @@ def main():
 
 
     for reImagePath in refImagePaths:
-
         refImageName = Path(reImagePath).stem
-
         # 最终合成视频输出文件夹
         outRefDir = os.path.join(outDir, refImageName)
         outGenDir = os.path.join(outRefDir, "gen")
