@@ -70,8 +70,7 @@ def main():
 
     vae = AutoencoderKL.from_pretrained(
         config.pretrained_vae_path,
-        device_map='auto'
-    ).to(dtype=weight_dtype)
+    ).to(dtype=weight_dtype, device=cuda1)
 
     reference_unet = UNet2DConditionModel.from_pretrained(
         config.pretrained_base_model_path,
