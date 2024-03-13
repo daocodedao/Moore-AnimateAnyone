@@ -21,7 +21,7 @@ from src.models.pose_guider import PoseGuider
 from src.models.unet_2d_condition import UNet2DConditionModel
 from src.models.unet_3d import UNet3DConditionModel
 from src.pipelines.pipeline_pose2vid_long import Pose2VideoPipeline
-from src.utils.util import get_fps, read_frames, save_videos_grid
+from src.utils.util import *
 
 
 from utils.logger_settings import api_logger
@@ -52,15 +52,7 @@ def parse_args():
 
     return args
 
-
-def main():
-    args = parse_args()
-
-    config = OmegaConf.load(args.config)
-
-    ref_image_path = args.refImagePath
-    pose_video_path = args.posVideoPath
-
+def initResource(args, config):
     if config.weight_dtype == "fp16":
         weight_dtype = torch.bfloat16
     else:
@@ -99,7 +91,7 @@ def main():
 
     generator = torch.manual_seed(args.seed)
 
-    width, height = args.W, args.H
+    # width, height = args.W, args.H
 
     # load pretrained weights
     denoising_unet.load_state_dict(
@@ -123,18 +115,12 @@ def main():
     )
     pipe = pipe.to(dtype=weight_dtype, device=cuda0)
     pipe.enable_vae_slicing()
-    # pipe.enable_sequential_cpu_offload()
+# pipe.enable_sequential_cpu_offload()
+    return pipe, generator
 
-    date_str = datetime.now().strftime("%Y%m%d")
-    time_str = datetime.now().strftime("%H%M")
-    save_dir_name = f"{time_str}--seed_{args.seed}-{width}x{height}"
-
-    save_dir = Path(f"output/{date_str}/{save_dir_name}")
-    save_dir.mkdir(exist_ok=True, parents=True)
-
-    ref_name = Path(ref_image_path).stem
-    pose_name = Path(pose_video_path).stem.replace("_kps", "")
-
+def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVideoPath):
+    api_logger.info(f"准备生成视频， poseVideo={pose_video_path}, refImage={ref_image_path}, outVideo={outVideoPath}")
+    width, height = args.W, args.H
     ref_image_pil = Image.open(ref_image_path).convert("RGB")
 
     pose_list = []
@@ -181,26 +167,65 @@ def main():
     ).videos
 
     video = torch.cat([ref_image_tensor, pose_tensor, video], dim=0)
-    videoName = f"{ref_name}_{pose_name}_{height}x{width}_{int(args.cfg)}_{time_str}"
-    curVideoPath = f"{save_dir}/{videoName}.mp4"
-    api_logger.info(f"saving video to {curVideoPath}")
     save_videos_grid(
         video,
-        curVideoPath,
+        outVideoPath,
         n_rows=3,
         fps=src_fps if args.fps is None else args.fps,
     )
 
-    bucketName = "magicphoto-1315251136"
-    resultUrlPre = f"animate/video/{videoName}/"
-    reusultUrl = f"{resultUrlPre}{curVideoPath}"
-    api_logger.info(f"上传视频 {curVideoPath}")
-    if os.path.exists(curVideoPath):
-        api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
-        TosService.upload_file(curVideoPath, reusultUrl, bucketName)
-        KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
-        playUrl = f"{KCDNPlayUrl}{reusultUrl}"
-        api_logger.info(f"播放地址= {playUrl}")
+def main():
+    args = parse_args()
+
+    config = OmegaConf.load(args.config)
+    
+    ref_image_path = args.refImagePath
+    pose_video_path = args.posVideoPath
+
+    pipe, generator = initResource(args, config)
+    # width, height = args.W, args.H
+
+    videoDuraion = video_duration(pose_video_path)
+    processId = os.path.basename(pose_video_path).split(".")[0]
+    outDir = f"output/{processId}"
+    outSplitDir = os.path.join(outDir, "split")
+    outGenDir = os.path.join(outDir, "gen")
+
+    poseVideoList = []
+    if video_duration > 10:
+        api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，10秒一切割")
+        split_video(pose_video_path, 10, outSplitDir)
+        poseVideoList = [i for i in os.listdir(outSplitDir) if i.endswith('mp4')]
+    else:
+        poseVideoList.append(pose_video_path)
+
+    outVideoPathList = []
+    for idx, video_path in enumerate(poseVideoList):
+        outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
+        try:
+            generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
+            if os.path.exists(outVideoPath):
+                api_logger.info(f"生成视频成功，路径:{outVideoPath}")
+                outVideoPathList.append(outVideoPath)
+            else:
+                api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
+        except Exception as e:
+            api_logger.error(f"生成视频失败，路径:{outVideoPath}")
+            api_logger.error(e)
+
+
+    
+
+    # bucketName = "magicphoto-1315251136"
+    # resultUrlPre = f"animate/video/{videoName}/"
+    # reusultUrl = f"{resultUrlPre}{curVideoPath}"
+    # api_logger.info(f"上传视频 {curVideoPath}")
+    # if os.path.exists(curVideoPath):
+    #     api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
+    #     TosService.upload_file(curVideoPath, reusultUrl, bucketName)
+    #     KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
+    #     playUrl = f"{KCDNPlayUrl}{reusultUrl}"
+    #     api_logger.info(f"播放地址= {playUrl}")
 
 
 

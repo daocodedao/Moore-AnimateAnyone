@@ -133,8 +133,6 @@ def get_fps(video_path):
     return fps
 
 
-
-
 def split_video(filename, segment_length, output_dir):
     clip = VideoFileClip(filename)
     duration = clip.duration
@@ -152,8 +150,8 @@ def split_video(filename, segment_length, output_dir):
     # output_path = os.path.join(dir_path, output_dir)
 
     # Create output directory if it doesn't exist
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    shutil.rmtree(output_dir, ignore_errors=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     while start_time < duration:
         output = os.path.join(output_dir, f"{basename}_part{i}.mp4")
@@ -162,3 +160,7 @@ def split_video(filename, segment_length, output_dir):
         end_time += segment_length
         i += 1
     print(f'Video split into {i-1} parts.')
+
+def video_duration(filename):
+    clip = VideoFileClip(filename)
+    return clip.duration
