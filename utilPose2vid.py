@@ -28,7 +28,8 @@ from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
 from utilVid2pose import *
-#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png' --processId '6TvTJIxZca4'
+from utils.util import Util
+#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/girl/' --processId '6TvTJIxZca4'
 
 
 # scp -r  -P 10080 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
@@ -210,6 +211,27 @@ def main():
     outDir = f"/data/work/dance/{processId}"
     os.makedirs(outDir, exist_ok=True)
 
+
+    refImagePaths = []
+    if os.path.isdir(ref_image_path):
+        api_logger.info("ref 是文件夹")
+        imagePaths = Util.get_image_paths_from_folder(ref_image_path)
+        api_logger.info(f"共有{len(imagePaths)}张图片")
+        refImagePaths.append(imagePaths)
+
+    elif os.path.isfile(ref_image_path):
+        api_logger.info("ref 是文件")
+        refImagePaths.append(ref_image_path)
+        
+    if len(refImagePaths) == 0:
+        api_logger.error("ref 没有图片, 退出")
+        exit(1)
+
+    if not os.path.exists(src_video_path):
+        api_logger.error("没有原视频, 退出")
+        exit(1)
+
+
     videoSrcPath = os.path.join(outDir, f"{processId}.mp4")
     curVideoPath = videoSrcPath
     videoPosePath = os.path.join(outDir, f"{processId}-pose.mp4")
@@ -219,13 +241,11 @@ def main():
     videoAudioPath = os.path.join(outDir, f"{processId}.wav")
     videoAudioInsPath = os.path.join(outDir, f"{processId}-ins.wav")
     
-    videoComposePath = os.path.join(outDir, f"{processId}-composed.mp4")
-    videoComposeBGMusicPath = os.path.join(outDir, f"{processId}-composed-bg.mp4")
+
 
     # pose 切割视频输出文件夹
     outSplitDir = os.path.join(outDir, "split")
-    # 最终合成视频输出文件夹
-    outGenDir = os.path.join(outDir, "gen")
+
 
     api_logger.info("---------检查视频文件和POSE文件")
     if not os.path.exists(videoSrcPath):
@@ -253,18 +273,17 @@ def main():
     if not os.path.exists(videoAudioInsPath):
         extractBgMusic(videoAudioPath, processId, videoAudioInsPath)
 
+
     api_logger.info("---------确保切割后的文件夹存在并清空")
     shutil.rmtree(outSplitDir, ignore_errors=True)
     os.makedirs(outSplitDir, exist_ok=True)
 
-    # shutil.rmtree(outGenDir, ignore_errors=True)
-    os.makedirs(outGenDir, exist_ok=True)
-
-    videoDuraion = video_duration(videoPosePath)
 
 
+    
     api_logger.info("2---------检查切割POSE视频")
     poseVideoList = []
+    videoDuraion = video_duration(videoPosePath)
     if videoDuraion > kMaxPoseVideoDuration:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
         split_video(videoPosePath, kMaxPoseVideoDuration, outSplitDir)
@@ -275,65 +294,75 @@ def main():
         poseVideoList.append(videoPosePath)
 
 
-    model_pths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
-    if len(model_pths) == 0:
+    for reImagePath in refImagePaths:
 
-        api_logger.info("3---------初始化models")
-        pipe, generator = initResource(args, config)
-    
-        api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
-        outVideoPathList = []
-        poseVideoList.sort()
-        for idx, video_path in enumerate(poseVideoList):
-            outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
-            try:
-                generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
-                if os.path.exists(outVideoPath):
-                    api_logger.info(f"生成视频成功，路径:{outVideoPath}")
-                    outVideoPathList.append(outVideoPath)
-                else:
-                    api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
-            except Exception as e:
-                api_logger.error(f"生成视频失败，路径:{outVideoPath}")
-                api_logger.error(e)
-    else:
-        api_logger.info("临时处理，无需合成")
+        refImageName = Path(reImagePath).stem
 
-    api_logger.info("4---------结束-合成视频")
+        # 最终合成视频输出文件夹
+        outRefDir = os.path.join(outDir, refImageName)
+        outGenDir = os.path.join(outRefDir, "gen")
+        # shutil.rmtree(outGenDir, ignore_errors=True)
+        os.makedirs(outGenDir, exist_ok=True)
 
-    api_logger.info("5---------合并视频,")
-    model_pths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
-    model_pths.sort()
-    api_logger.info(f"共有 {len(model_pths)}")
-    concatenate(model_pths, videoComposePath)
-    curVideoPath = videoComposePath
+        # pose 视频+ref 图片合成子视频后，合并最终视频
+        videoComposePath = os.path.join(outRefDir, f"{processId}-composed.mp4")
+        # 最终视频加背景音乐
+        videoComposeBGMusicPath = os.path.join(outRefDir, f"{processId}-composed-bg.mp4")
+
+        genVideoPaths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
+        if len(genVideoPaths) == 0:
+            api_logger.info("3---------初始化models")
+            pipe, generator = initResource(args, config)
+        
+            api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
+            outVideoPathList = []
+            poseVideoList.sort()
+            for idx, video_path in enumerate(poseVideoList):
+                outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
+                try:
+                    generateVideo(args, pipe, generator, video_path, ref_image_path, outVideoPath)
+                    if os.path.exists(outVideoPath):
+                        api_logger.info(f"生成视频成功，路径:{outVideoPath}")
+                        outVideoPathList.append(outVideoPath)
+                    else:
+                        api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
+                except Exception as e:
+                    api_logger.error(f"生成视频失败，路径:{outVideoPath}")
+                    api_logger.error(e)
+        else:
+            api_logger.info("临时处理，无需合成")
+
+        api_logger.info("4---------结束-合成视频")
+
+        api_logger.info("5---------合并视频,")
+        genVideoPaths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
+        genVideoPaths.sort()
+        api_logger.info(f"共有 {len(genVideoPaths)}")
+        concatenate(genVideoPaths, videoComposePath)
+        curVideoPath = videoComposePath
 
 
-    api_logger.info("6---------添加背景音乐")
-    # command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
-    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} -shortest {videoComposeBGMusicPath}"
+        api_logger.info("6---------添加背景音乐")
+        command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -shortest {videoComposeBGMusicPath}"
+        api_logger.info(f"命令：")
+        api_logger.info(command)
+        result = subprocess.check_output(command, shell=True)
+        log_subprocess_output(result)
+        api_logger.info(f'完成背景音乐合并任务: {videoComposeBGMusicPath}')
+        curVideoPath = videoComposeBGMusicPath
 
 
-
-    api_logger.info(f"命令：")
-    api_logger.info(command)
-    result = subprocess.check_output(command, shell=True)
-    log_subprocess_output(result)
-    api_logger.info(f'完成背景音乐合并任务: {videoComposeBGMusicPath}')
-    curVideoPath = videoComposeBGMusicPath
-
-
-    api_logger.info("6---------上传到腾讯")
-    bucketName = "magicphoto-1315251136"
-    resultUrlPre = f"dance/video/{processId}/"
-    reusultUrl = f"{resultUrlPre}{curVideoPath}"
-    api_logger.info(f"上传视频 {curVideoPath}")
-    if os.path.exists(curVideoPath):
-        api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
-        TosService.upload_file(curVideoPath, reusultUrl, bucketName)
-        KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
-        playUrl = f"{KCDNPlayUrl}{reusultUrl}"
-        api_logger.info(f"播放地址= {playUrl}")
+        api_logger.info("6---------上传到腾讯")
+        bucketName = "magicphoto-1315251136"
+        resultUrlPre = f"dance/video/{processId}/"
+        reusultUrl = f"{resultUrlPre}{curVideoPath}"
+        api_logger.info(f"上传视频 {curVideoPath}")
+        if os.path.exists(curVideoPath):
+            api_logger.info(f"上传视频到OSS，curVideoPath:{curVideoPath}, task.key:{reusultUrl}, task.bucketName:{bucketName}")
+            TosService.upload_file(curVideoPath, reusultUrl, bucketName)
+            KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
+            playUrl = f"{KCDNPlayUrl}{reusultUrl}"
+            api_logger.info(f"播放地址= {playUrl}")
 
 
 
