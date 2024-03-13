@@ -36,7 +36,7 @@ from utils.Tos import TosService
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
-MaxPoseVideoDuration = 5
+MaxPoseVideoDuration = 6
 
 def parse_args():
     parser = argparse.ArgumentParser()
