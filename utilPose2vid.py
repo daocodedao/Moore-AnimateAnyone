@@ -27,7 +27,8 @@ from src.utils.util import *
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
-#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
+
+#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png'
 
 
 # scp -r  -P 10080 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
@@ -38,6 +39,7 @@ cuda0 = "cuda:0"
 cuda1 = "cuda:1"
 kMaxPoseVideoDuration = 6
 kFixedFps = 24
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -141,7 +143,7 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
         frameCount = len(pose_images)
 
     api_logger.info(f"frameCount={frameCount}")
-    api_logger.info(f"姿势视频有 {len(pose_images)} 帧, 帧率 {int(src_fps)} fps")
+    api_logger.info(f"{pose_video_path} 视频有 {len(pose_images)} 帧, 帧率 {int(src_fps)} fps")
     pose_transform = transforms.Compose(
         [transforms.Resize((height, width)), transforms.ToTensor()]
     )
@@ -190,6 +192,8 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
             n_rows=3,
             fps=src_fps,
         )
+
+
 
 
 def main():

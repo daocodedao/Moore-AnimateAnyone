@@ -15,6 +15,17 @@ import sys
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 # from moviepy.editor import VideoFileClip
 from moviepy.editor import *
+from utils.logger_settings import api_logger
+import subprocess
+import time
+
+def log_subprocess_output(inStr):
+    if len(inStr) > 0:
+        inStr = inStr.decode(sys.stdout.encoding)
+        logStrList = inStr.split('\n')
+        for line in logStrList:
+            api_logger.info(line)
+
 
 def seed_everything(seed):
     import random
@@ -174,3 +185,59 @@ def changeVideoFps(filePath, fps=30, outFilePath=None):
 
     clip.write_videofile(outFilePath, fps=fps)
     print(f"now fps = {int(get_fps(outFilePath))}")
+
+
+def concatenate(video_clip_paths, output_path, method="compose"):
+    """Concatenates several video files into one video file
+    and save it to `output_path`. Note that extension (mp4, etc.) must be added to `output_path`
+    `method` can be either 'compose' or 'reduce':
+        `reduce`: Reduce the quality of the video to the lowest quality on the list of `video_clip_paths`.
+        `compose`: type help(concatenate_videoclips) for the info"""
+    # create VideoFileClip object for each video file
+    clips = [VideoFileClip(c) for c in video_clip_paths]
+    if method == "reduce":
+        # calculate minimum width & height across all clips
+        min_height = min([c.h for c in clips])
+        min_width = min([c.w for c in clips])
+        # resize the videos to the minimum
+        clips = [c.resize(newsize=(min_width, min_height)) for c in clips]
+        # concatenate the final video
+        final_clip = concatenate_videoclips(clips)
+    elif method == "compose":
+        # concatenate the final video with the compose method provided by moviepy
+        final_clip = concatenate_videoclips(clips, method="compose")
+    # write the output video file
+    final_clip.write_videofile(output_path)
+
+
+def extractAudioFromVideo(srcVideoPath, outAudioPath):
+    api_logger.info(f"从视频剥离音频文件 {srcVideoPath}")
+    command = f"ffmpeg -y -i {srcVideoPath} -vn -acodec pcm_f32le -ar 44100 -ac 2 {outAudioPath}"
+    api_logger.info(command)
+    result = subprocess.check_output(command, shell=True)
+    log_subprocess_output(result)
+
+
+def extractBgMusic(srcAudioPath, processId, audioInsPath):
+    try:
+        for tryIndex in range(0,5):
+            try:
+                api_logger.info(f"第{tryIndex}获取背景音乐")
+                command = f"/data/work/GPT-SoVITS/start-urv.sh -s {srcAudioPath} -i {processId} -n {audioInsPath}"
+                api_logger.info(f"命令：")
+                api_logger.info(command)
+                result = subprocess.check_output(command, shell=True)
+                log_subprocess_output(result)
+                if os.path.exists(audioInsPath):
+                    api_logger.info(f'完成音频urv任务: {audioInsPath}')
+                    break
+            except Exception as e:
+                api_logger.error(f"第{tryIndex}次，获取背景音乐失败：{e} 休息2秒后重试")
+                time.sleep(2)
+
+        if os.path.exists(audioInsPath):
+            api_logger.info(f"背景音乐 {audioInsPath} 获取成功")
+        else:
+            api_logger.error(f"背景音乐 {audioInsPath} 获取失败")
+    except Exception as e:
+        api_logger.error(f"视频加上背景音乐失败：{e}")
