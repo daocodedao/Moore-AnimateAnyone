@@ -28,7 +28,7 @@ from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
 from utilVid2pose import *
-#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png'
+#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/anyone-3.png' --processId '6TvTJIxZca4'
 
 
 # scp -r  -P 10080 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
@@ -245,11 +245,11 @@ def main():
         videoPosePath = videoSrcFixFpsPath
         api_logger.info(f"fps调整完成，现在的videoPosePath={videoPosePath}")
 
-    api_logger.info("---------是否要提前视频里的音频")
+    api_logger.info("---------是否要提取视频里的音频")
     if not os.path.exists(videoAudioPath):
         extractAudioFromVideo(videoSrcPath, videoAudioPath)
 
-    api_logger.info("---------是否要提前背景音乐")
+    api_logger.info("---------是否要提取背景音乐")
     if not os.path.exists(videoAudioInsPath):
         extractBgMusic(videoAudioPath, processId, videoAudioInsPath)
 
@@ -310,7 +310,11 @@ def main():
 
 
     api_logger.info("6---------添加背景音乐")
-    command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
+    # command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
+    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} -c copy {videoComposeBGMusicPath}"
+
+
+
     api_logger.info(f"命令：")
     api_logger.info(command)
     result = subprocess.check_output(command, shell=True)
