@@ -261,7 +261,7 @@ def main():
 
     api_logger.info("---------调整POSE视频FPS")
     src_fps = get_fps(videoPosePath)
-    api_logger.info(f"videoPosePath={videoPosePath} src_fps={src_fps}")
+    api_logger.info(f"videoPosePath={videoPosePath} src_fps={int(src_fps)}")
     if not os.path.exists(videoSrcFixFpsPath) and int(src_fps) > kFixedFps:
         api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
         changeVideoFps(videoPosePath, kFixedFps, videoSrcFixFpsPath)
