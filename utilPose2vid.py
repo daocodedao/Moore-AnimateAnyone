@@ -205,8 +205,16 @@ def main():
     videoDuraion = video_duration(pose_video_path)
     processId = os.path.basename(pose_video_path).split(".")[0]
     outDir = f"output/{processId}"
+    # pose 切割视频输出文件夹
     outSplitDir = os.path.join(outDir, "split")
+    # 最终合成视频输出文件夹
     outGenDir = os.path.join(outDir, "gen")
+
+    shutil.rmtree(outSplitDir, ignore_errors=True)
+    os.mkdir(outSplitDir, exist_ok=True)
+
+    shutil.rmtree(outGenDir, ignore_errors=True)
+    os.mkdir(outGenDir, exist_ok=True)
 
     poseVideoList = []
     if videoDuraion > MaxPoseVideoDuration:
