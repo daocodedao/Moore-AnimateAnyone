@@ -70,12 +70,14 @@ def main():
 
     vae = AutoencoderKL.from_pretrained(
         config.pretrained_vae_path,
-    ).to(device_map='auto' , dtype=weight_dtype)
+        device_map='auto'
+    ).to(dtype=weight_dtype)
 
     reference_unet = UNet2DConditionModel.from_pretrained(
         config.pretrained_base_model_path,
         subfolder="unet",
-    ).to(dtype=weight_dtype, device_map='auto' )
+        device_map='auto'
+    ).to(dtype=weight_dtype)
 
     inference_config_path = config.inference_config
     infer_config = OmegaConf.load(inference_config_path)
@@ -84,15 +86,18 @@ def main():
         config.motion_module_path,
         subfolder="unet",
         unet_additional_kwargs=infer_config.unet_additional_kwargs,
-    ).to(dtype=weight_dtype, device_map='auto' )
+        device_map='auto'
+    ).to(dtype=weight_dtype)
 
     pose_guider = PoseGuider(320, block_out_channels=(16, 32, 96, 256)).to(
-        dtype=weight_dtype, device_map='auto' 
+        dtype=weight_dtype, device=cuda1 
     )
 
     image_enc = CLIPVisionModelWithProjection.from_pretrained(
-        config.image_encoder_path
-    ).to(dtype=weight_dtype, device_map='auto' )
+        config.image_encoder_path, 
+        device_map='auto'
+
+    ).to(dtype=weight_dtype )
 
     sched_kwargs = OmegaConf.to_container(infer_config.noise_scheduler_kwargs)
     scheduler = DDIMScheduler(**sched_kwargs)
@@ -120,8 +125,9 @@ def main():
         denoising_unet=denoising_unet,
         pose_guider=pose_guider,
         scheduler=scheduler,
+        device_map='auto'
     )
-    pipe = pipe.to(device_map='auto' , dtype=weight_dtype)
+    pipe = pipe.to(dtype=weight_dtype)
     pipe.enable_vae_slicing()
     # pipe.enable_sequential_cpu_offload()
 
