@@ -261,7 +261,8 @@ def main():
 
     api_logger.info("---------调整POSE视频FPS")
     src_fps = get_fps(videoPosePath)
-    if not os.path.exists(videoSrcFixFpsPath) and  int(src_fps) > kFixedFps:
+    api_logger.info(f"videoPosePath={videoPosePath} src_fps={src_fps}")
+    if not os.path.exists(videoSrcFixFpsPath) and int(src_fps) > kFixedFps:
         api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
         changeVideoFps(videoPosePath, kFixedFps, videoSrcFixFpsPath)
         videoPosePath = videoSrcFixFpsPath
@@ -280,8 +281,6 @@ def main():
     shutil.rmtree(outSplitDir, ignore_errors=True)
     os.makedirs(outSplitDir, exist_ok=True)
 
-
-
     
     api_logger.info("2---------检查切割POSE视频")
     poseVideoList = []
@@ -290,7 +289,7 @@ def main():
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
         split_video(videoPosePath, kMaxPoseVideoDuration, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
-        api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
+        api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频, {poseVideoList}")
     else:
         api_logger.info(f"pose视频时长{videoDuraion}, 无需要切割视频")
         poseVideoList.append(videoPosePath)
