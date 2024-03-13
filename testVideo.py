@@ -31,6 +31,7 @@ processId = "6TvTJIxZca4"
 outDir = "./output/"
 
 outVideoDir = os.path.join(outDir, processId)
+os.makedirs(outVideoDir, exist_ok=True)
 
 src_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4.mp4"
 out_audio_path = os.path.join(outVideoDir, f"{processId}.wav")
