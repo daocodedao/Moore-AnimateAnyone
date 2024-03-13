@@ -1,4 +1,4 @@
-from src.utils.util import get_fps, read_frames, save_videos_grid,split_video
+from src.utils.util import *
 import os
 import shutil
 
@@ -7,7 +7,8 @@ outFpsDIr = "./youtube/6TvTJIxZca4/split"
 
 
 
-shutil.rmtree(outFpsDIr, ignore_errors=True)
+# shutil.rmtree(outFpsDIr, ignore_errors=True)
+videoDuraion = video_duration(pose_video_path)
 
 # if not os.path.exists(outFpsDIr):
     # os.makedirs(outFpsDIr, exist_ok=True)
