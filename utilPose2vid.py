@@ -27,7 +27,7 @@ from src.utils.util import *
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
-#  python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
+#  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
 
 
 # scp -r  -P 10065 fxbox@frp.fxait.com:/data/work/Moore-AnimateAnyone/output/6TvTJIxZca4_kps  /Users/linzhiji/Downloads/ 
@@ -210,7 +210,7 @@ def main():
     poseVideoList = []
     if videoDuraion > 10:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，10秒一切割")
-        split_video(pose_video_path, 10, outSplitDir)
+        split_video(pose_video_path, 3, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
         api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
     else:
