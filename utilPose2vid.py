@@ -301,6 +301,9 @@ def main():
         # 最终合成视频输出文件夹
         outRefDir = os.path.join(outDir, refImageName)
         outGenDir = os.path.join(outRefDir, "gen")
+
+        api_logger.info(f"outGenDir = {outGenDir}")
+
         # shutil.rmtree(outGenDir, ignore_errors=True)
         os.makedirs(outGenDir, exist_ok=True)
 
@@ -310,6 +313,7 @@ def main():
         videoComposeBGMusicPath = os.path.join(outRefDir, f"{processId}-composed-bg.mp4")
 
         genVideoPaths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
+        api_logger.info(f"genVideoPaths={genVideoPaths}")
         if len(genVideoPaths) == 0:
             api_logger.info("3---------初始化models")
             pipe, generator = initResource(args, config)
