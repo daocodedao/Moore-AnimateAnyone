@@ -196,7 +196,7 @@ def main():
     if videoDuraion > 10:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，10秒一切割")
         split_video(pose_video_path, 10, outSplitDir)
-        poseVideoList = [i for i in os.listdir(outSplitDir) if i.endswith('mp4')]
+        poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
         api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
     else:
         api_logger.info(f"pose视频时长{videoDuraion}, 无需要切割视频")
