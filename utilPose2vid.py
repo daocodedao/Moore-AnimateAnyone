@@ -93,9 +93,7 @@ def main():
 
     image_enc = CLIPVisionModelWithProjection.from_pretrained(
         config.image_encoder_path, 
-        device_map='auto'
-
-    ).to(dtype=weight_dtype )
+    ).to(dtype=weight_dtype, device=cuda0 )
 
     sched_kwargs = OmegaConf.to_container(infer_config.noise_scheduler_kwargs)
     scheduler = DDIMScheduler(**sched_kwargs)
