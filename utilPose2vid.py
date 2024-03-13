@@ -262,11 +262,15 @@ def main():
     api_logger.info("---------调整POSE视频FPS")
     src_fps = get_fps(videoPosePath)
     api_logger.info(f"videoPosePath={videoPosePath} src_fps={int(src_fps)}")
-    if not os.path.exists(videoSrcFixFpsPath) and int(src_fps) > kFixedFps:
-        api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
-        changeVideoFps(videoPosePath, kFixedFps, videoSrcFixFpsPath)
+    if int(src_fps) > kFixedFps:
+        if not os.path.exists(videoSrcFixFpsPath): 
+            api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
+            changeVideoFps(videoPosePath, kFixedFps, videoSrcFixFpsPath)
+            api_logger.info(f"fps调整完成")
+        
         videoPosePath = videoSrcFixFpsPath
-        api_logger.info(f"fps调整完成，现在的videoPosePath={videoPosePath}")
+
+    api_logger.info(f"现在的videoPosePath={videoPosePath}")
 
     api_logger.info("---------是否要提取视频里的音频")
     if not os.path.exists(videoAudioPath):
