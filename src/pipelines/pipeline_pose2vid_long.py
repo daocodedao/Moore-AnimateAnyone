@@ -25,7 +25,7 @@ from transformers import CLIPImageProcessor
 from src.models.mutual_self_attention import ReferenceAttentionControl
 from src.pipelines.context import get_context_scheduler
 from src.pipelines.utils import get_tensor_interpolation_method
-
+from utils.logger_settings import api_logger
 
 @dataclass
 class Pose2VideoPipelineOutput(BaseOutput):
@@ -103,9 +103,10 @@ class Pose2VideoPipeline(DiffusionPipeline):
 
     @property
     def _execution_device(self):
-        if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
+        api_logger.info(f"_execution_device device={self.device}")
+        if self.device != torch.device("meta") or not hasattr(self.denoising_unet, "_hf_hook"):
             return self.device
-        for module in self.unet.modules():
+        for module in self.denoising_unet.modules():
             if (
                 hasattr(module, "_hf_hook")
                 and hasattr(module._hf_hook, "execution_device")
@@ -365,8 +366,8 @@ class Pose2VideoPipeline(DiffusionPipeline):
         **kwargs,
     ):
         # Default height and width to unet
-        height = height or self.unet.config.sample_size * self.vae_scale_factor
-        width = width or self.unet.config.sample_size * self.vae_scale_factor
+        height = height or self.denoising_unet.config.sample_size * self.vae_scale_factor
+        width = width or self.denoising_unet.config.sample_size * self.vae_scale_factor
 
         device = self._execution_device
 

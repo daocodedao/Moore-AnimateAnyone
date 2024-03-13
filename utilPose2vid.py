@@ -27,7 +27,7 @@ from src.utils.util import get_fps, read_frames, save_videos_grid
 from utils.logger_settings import api_logger
 from utils.Tos import TosService
 
-#  python -m scripts.pose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
+#  python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --posVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4' --refImagePath './configs/inference/ref_images/anyone-2.png'
 
 
 dtype = torch.bfloat16
@@ -113,7 +113,7 @@ def main():
         torch.load(config.pose_guider_path, map_location="cpu"),
     )
 
-    pipe = Pose2VideoPipeline(
+    pipe:Pose2VideoPipeline = Pose2VideoPipeline(
         vae=vae,
         image_encoder=image_enc,
         reference_unet=reference_unet,
