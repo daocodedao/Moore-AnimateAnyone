@@ -43,3 +43,4 @@ decord==0.6.0
 
 cos-python-sdk-v5
 accelerate
+moviepy

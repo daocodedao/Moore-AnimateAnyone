@@ -11,7 +11,9 @@ import torch
 import torchvision
 from einops import rearrange
 from PIL import Image
-
+import sys
+from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
+from moviepy.editor import VideoFileClip
 
 def seed_everything(seed):
     import random
@@ -129,3 +131,34 @@ def get_fps(video_path):
     fps = video_stream.average_rate
     container.close()
     return fps
+
+
+
+
+def split_video(filename, segment_length, output_dir):
+    clip = VideoFileClip(filename)
+    duration = clip.duration
+
+    start_time = 0
+    end_time = segment_length
+    i = 1
+
+    # Extract the filename without extension
+    basename = os.path.basename(filename).split('.')[0]
+
+    # Extract directory path
+    # dir_path = os.path.dirname(filename)
+
+    # output_path = os.path.join(dir_path, output_dir)
+
+    # Create output directory if it doesn't exist
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    while start_time < duration:
+        output = os.path.join(output_dir, f"{basename}_part{i}.mp4")
+        ffmpeg_extract_subclip(filename, start_time, min(end_time, duration), targetname=output)
+        start_time = end_time
+        end_time += segment_length
+        i += 1
+    print(f'Video split into {i-1} parts.')

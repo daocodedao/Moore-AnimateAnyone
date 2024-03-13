@@ -1,9 +1,13 @@
-from src.utils.util import get_fps, read_frames, save_videos_grid
-
+from src.utils.util import get_fps, read_frames, save_videos_grid,split_video
+import os
 
 
 pose_video_path = "./youtube/6TvTJIxZca4/6TvTJIxZca4_kps.mp4"
+outFpsDIr = "./youtube/6TvTJIxZca4/split"
 
-pose_images = read_frames(pose_video_path)
+if not os.path.exists(outFpsDIr):
+    os.makedirs(outFpsDIr, exist_ok=True)
 
+# pose_images = read_frames(pose_video_path)
+split_video(filename=pose_video_path, segment_length = 10, output_dir=outFpsDIr)
 print("done")
