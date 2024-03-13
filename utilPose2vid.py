@@ -263,11 +263,7 @@ def main():
     videoDuraion = video_duration(videoPosePath)
 
 
-    api_logger.info("2---------初始化models")
-    pipe, generator = initResource(args, config)
-
-
-    api_logger.info("3---------检查切割POSE视频")
+    api_logger.info("2---------检查切割POSE视频")
     poseVideoList = []
     if videoDuraion > kMaxPoseVideoDuration:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
@@ -278,10 +274,14 @@ def main():
         api_logger.info(f"pose视频时长{videoDuraion}, 无需要切割视频")
         poseVideoList.append(videoPosePath)
 
-    api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
 
     model_pths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
     if len(model_pths) == 0:
+
+        api_logger.info("3---------初始化models")
+        pipe, generator = initResource(args, config)
+    
+        api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
         outVideoPathList = []
         poseVideoList.sort()
         for idx, video_path in enumerate(poseVideoList):
@@ -311,7 +311,7 @@ def main():
 
     api_logger.info("6---------添加背景音乐")
     # command = f"ffmpeg -y -i {curVideoPath}  -i {videoAudioInsPath} -c:v copy -filter_complex '[0:a]aformat=fltp:44100:stereo,apad[0a];[1]aformat=fltp:44100:stereo,volume=0.6[1a];[0a][1a]amerge[a]' -map 0:v -map '[a]' -ac 2 {videoComposeBGMusicPath}"
-    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} -c copy {videoComposeBGMusicPath}"
+    command = f"ffmpeg -i {curVideoPath}  -i {videoAudioInsPath} c:v copy -c:a aac {videoComposeBGMusicPath}"
 
 
 
