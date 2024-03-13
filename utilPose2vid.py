@@ -217,11 +217,11 @@ def main():
         api_logger.info("ref 是文件夹")
         imagePaths = Util.get_image_paths_from_folder(ref_image_path)
         api_logger.info(f"共有{len(imagePaths)}张图片")
-        refImagePaths.append(imagePaths)
+        refImagePaths = refImagePaths + imagePaths
 
     elif os.path.isfile(ref_image_path):
         api_logger.info("ref 是文件")
-        refImagePaths = refImagePaths + ref_image_path
+        refImagePaths.append(ref_image_path)
 
     api_logger.info(refImagePaths)
         
