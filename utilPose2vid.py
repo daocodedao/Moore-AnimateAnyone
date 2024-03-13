@@ -211,10 +211,10 @@ def main():
     outGenDir = os.path.join(outDir, "gen")
 
     shutil.rmtree(outSplitDir, ignore_errors=True)
-    os.mkdir(outSplitDir, exist_ok=True)
+    os.makedirs(outSplitDir, exist_ok=True)
 
     shutil.rmtree(outGenDir, ignore_errors=True)
-    os.mkdir(outGenDir, exist_ok=True)
+    os.makedirs(outGenDir, exist_ok=True)
 
     poseVideoList = []
     if videoDuraion > MaxPoseVideoDuration:
