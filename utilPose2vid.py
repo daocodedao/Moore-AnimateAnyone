@@ -84,9 +84,8 @@ def main():
         config.pretrained_base_model_path,
         config.motion_module_path,
         subfolder="unet",
-        unet_additional_kwargs=infer_config.unet_additional_kwargs,
-        device_map='auto'
-    ).to(dtype=weight_dtype)
+        unet_additional_kwargs=infer_config.unet_additional_kwargs
+    ).to(dtype=weight_dtype, device=cuda1)
 
     pose_guider = PoseGuider(320, block_out_channels=(16, 32, 96, 256)).to(
         dtype=weight_dtype, device=cuda1 
