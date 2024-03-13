@@ -36,7 +36,8 @@ from utils.Tos import TosService
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
-MaxPoseVideoDuration = 6
+kMaxPoseVideoDuration = 6
+kFixedFps = 24
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -134,6 +135,7 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
     pose_images = read_frames(pose_video_path)
     src_fps = get_fps(pose_video_path)
 
+
     frameCount = args.L
     if frameCount == -1:
         frameCount = len(pose_images)
@@ -179,16 +181,15 @@ def generateVideo(args, pipe, generator, pose_video_path, ref_image_path, outVid
             video,
             outVideoPath,
             n_rows=3,
-            fps=src_fps if args.fps is None else args.fps,
+            fps=src_fps,
         )
     else:
         save_videos_grid(
             video,
             outVideoPath,
             n_rows=3,
-            fps=src_fps if args.fps is None else args.fps,
+            fps=src_fps,
         )
-
 
 
 def main():
@@ -205,6 +206,8 @@ def main():
     videoDuraion = video_duration(pose_video_path)
     processId = os.path.basename(pose_video_path).split(".")[0]
     outDir = f"output/{processId}"
+    fpsChangedVideoPath = os.path.join(outDir, "processId-fps-fixed.mp4")
+
     # pose 切割视频输出文件夹
     outSplitDir = os.path.join(outDir, "split")
     # 最终合成视频输出文件夹
@@ -216,10 +219,17 @@ def main():
     shutil.rmtree(outGenDir, ignore_errors=True)
     os.makedirs(outGenDir, exist_ok=True)
 
+    src_fps = get_fps(pose_video_path)
+    if int(src_fps) > kFixedFps:
+        api_logger.info(f"原视频FPS需要调整为{kFixedFps}")
+        changeVideoFps(pose_video_path, kFixedFps, fpsChangedVideoPath)
+        pose_video_path = fpsChangedVideoPath
+        api_logger.info(f"fps调整完成，现在的pose_video_path={pose_video_path}")
+
     poseVideoList = []
-    if videoDuraion > MaxPoseVideoDuration:
-        api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{MaxPoseVideoDuration}秒一切割")
-        split_video(pose_video_path, MaxPoseVideoDuration, outSplitDir)
+    if videoDuraion > kMaxPoseVideoDuration:
+        api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
+        split_video(pose_video_path, kMaxPoseVideoDuration, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
         api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频")
     else:

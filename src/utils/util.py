@@ -13,7 +13,8 @@ from einops import rearrange
 from PIL import Image
 import sys
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
-from moviepy.editor import VideoFileClip
+# from moviepy.editor import VideoFileClip
+from moviepy.editor import *
 
 def seed_everything(seed):
     import random
@@ -164,3 +165,12 @@ def split_video(filename, segment_length, output_dir):
 def video_duration(filename):
     clip = VideoFileClip(filename)
     return clip.duration
+
+def changeVideoFps(filePath, fps=30, outFilePath=None):
+    print(f"now fps = {int(get_fps(filePath))}")
+    clip = VideoFileClip(filePath)
+    if outFilePath is None:
+        outFilePath = filePath
+
+    clip.write_videofile(outFilePath, fps=fps)
+    print(f"now fps = {int(get_fps(outFilePath))}")
