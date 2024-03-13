@@ -218,6 +218,7 @@ def main():
         poseVideoList.append(pose_video_path)
 
     outVideoPathList = []
+    poseVideoList.sort()
     for idx, video_path in enumerate(poseVideoList):
         outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
         try:
