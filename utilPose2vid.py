@@ -288,11 +288,13 @@ def main():
     api_logger.info("2---------检查切割POSE视频")
     poseVideoList = []
     videoDuraion = video_duration(videoPosePath)
+    spitPoseVideoCount = 1
     if videoDuraion > kMaxPoseVideoDuration:
         api_logger.info(f"pose视频时长{videoDuraion}, 需要切割视频，{kMaxPoseVideoDuration}秒一切割")
         split_video(videoPosePath, kMaxPoseVideoDuration, outSplitDir)
         poseVideoList = [os.path.join(outSplitDir, i)  for i in os.listdir(outSplitDir) if i.endswith('mp4')]
-        api_logger.info(f"切割视频完成，共有{len(poseVideoList)}个视频, {poseVideoList}")
+        spitPoseVideoCount = len(poseVideoList)
+        api_logger.info(f"切割视频完成，共有{spitPoseVideoCount}个视频, {poseVideoList}")
     else:
         api_logger.info(f"pose视频时长{videoDuraion}, 无需要切割视频")
         poseVideoList.append(videoPosePath)
@@ -316,10 +318,15 @@ def main():
 
         genVideoPaths = [os.path.join(outGenDir, i) for i in os.listdir(outGenDir) if i.endswith('mp4')]
         api_logger.info(f"genVideoPaths={genVideoPaths}")
-        if len(genVideoPaths) == 0:
+        if len(genVideoPaths) != spitPoseVideoCount:
             api_logger.info("3---------初始化models")
-            pipe, generator = initResource(args, config)
+            if pipe is None and generator is None:
+                pipe, generator = initResource(args, config)
         
+            api_logger.info(f"清空{outGenDir}")
+            shutil.rmtree(outGenDir, ignore_errors=True)
+            os.makedirs(outGenDir, exist_ok=True)
+
             api_logger.info("4---------开始-合成视频-耗时比较长-耐心等待")
             outVideoPathList = []
             poseVideoList.sort()
@@ -341,7 +348,7 @@ def main():
                         api_logger.error(e)
                         time.sleep(5)
         else:
-            api_logger.info("临时处理，无需合成")
+            api_logger.info("已经存在，无需合成")
 
         api_logger.info("4---------结束-合成视频")
 
