@@ -389,10 +389,10 @@ def main():
             
 
             notiMsg = f"跳舞视频\n"
-            notiMsg = notiMsg + f"cdn播放地址: {playUrl}\n"
             notiMsg = notiMsg + f"姿势视频:  https://youtu.be/{processId}\n"
             notiMsg = notiMsg + f"图片: {refImageName}\n"
             orginVideoUrl = playUrl.replace("http://magicphoto.cdn.yuebanjyapp.com/", "https://magicphoto-1315251136.cos.ap-hongkong.myqcloud.com/")
+            notiMsg = notiMsg + f"cdn播放地址: {playUrl}\n"
             notiMsg = notiMsg + f"原始地址: {orginVideoUrl}\n"
             NotifyUtil.notifyFeishu(notiMsg)
             api_logger.info(notiMsg)
