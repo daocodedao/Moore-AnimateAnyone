@@ -42,8 +42,8 @@ cuda0 = "cuda:0"
 cuda1 = "cuda:1"
 kMaxPoseVideoDuration = 6
 kFixedFps = 24
-pipe:Pose2VideoPipeline = None
-generator = None
+globalPipe:Pose2VideoPipeline = None
+globalGenerator = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -66,7 +66,7 @@ def parse_args():
     return args
 
 def initResource(args, config):
-    global pipe, generator 
+    global globalPipe, globalGenerator 
     api_logger.info("初始化各种model")
     if config.weight_dtype == "fp16":
         weight_dtype = torch.bfloat16
@@ -104,7 +104,7 @@ def initResource(args, config):
     sched_kwargs = OmegaConf.to_container(infer_config.noise_scheduler_kwargs)
     scheduler = DDIMScheduler(**sched_kwargs)
 
-    generator = torch.manual_seed(args.seed)
+    globalGenerator = torch.manual_seed(args.seed)
 
     # width, height = args.W, args.H
 
@@ -120,7 +120,7 @@ def initResource(args, config):
         torch.load(config.pose_guider_path, map_location="cpu"),
     )
 
-    pipe = Pose2VideoPipeline(
+    globalPipe = Pose2VideoPipeline(
         vae=vae,
         image_encoder=image_enc,
         reference_unet=reference_unet,
@@ -128,10 +128,10 @@ def initResource(args, config):
         pose_guider=pose_guider,
         scheduler=scheduler,
     )
-    pipe = pipe.to(dtype=weight_dtype, device=cuda0)
-    pipe.enable_vae_slicing()
+    globalPipe = globalPipe.to(dtype=weight_dtype, device=cuda0)
+    globalPipe.enable_vae_slicing()
     # pipe.enable_sequential_cpu_offload()
-    return pipe, generator
+    return globalPipe, globalGenerator
 
 def generateVideo(args, pipe, generator, videoPosePath, ref_image_path, outVideoPath):
     api_logger.info(f"准备生成视频， poseVideo={videoPosePath}, refImage={ref_image_path}, outVideo={outVideoPath}")
@@ -202,7 +202,7 @@ def generateVideo(args, pipe, generator, videoPosePath, ref_image_path, outVideo
 
 
 def main():
-    global pipe, generator
+    global globalPipe, globalGenerator
     args = parse_args()
 
     config = OmegaConf.load(args.config)
@@ -325,8 +325,8 @@ def main():
         api_logger.info(f"genVideoPaths={genVideoPaths}")
         if len(genVideoPaths) != spitPoseVideoCount:
             api_logger.info("3---------初始化models")
-            if pipe is None and generator is None:
-                pipe, generator = initResource(args, config)
+            if globalPipe is None and globalGenerator is None:
+                globalPipe, globalGenerator = initResource(args, config)
         
             api_logger.info(f"清空{outGenDir}")
             shutil.rmtree(outGenDir, ignore_errors=True)
@@ -337,10 +337,10 @@ def main():
             poseVideoList.sort()
             for idx, video_path in enumerate(poseVideoList):
                 outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
-                for tryInx in range(.5):
+                for tryInx in range(5):
                     try:
                         api_logger.info(f"开始合成视频，第{idx}个视频，第{tryInx}次尝试")
-                        generateVideo(args, pipe, generator, video_path, reImagePath, outVideoPath)
+                        generateVideo(args, globalPipe, globalGenerator, video_path, reImagePath, outVideoPath)
                         if os.path.exists(outVideoPath):
                             api_logger.info(f"生成视频成功，路径:{outVideoPath}")
                             outVideoPathList.append(outVideoPath)
