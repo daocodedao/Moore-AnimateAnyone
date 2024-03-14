@@ -42,7 +42,7 @@ cuda0 = "cuda:0"
 cuda1 = "cuda:1"
 kMaxPoseVideoDuration = 6
 kFixedFps = 24
-pipe = None
+pipe:Pose2VideoPipeline = None
 generator = None
 
 def parse_args():
@@ -120,7 +120,7 @@ def initResource(args, config):
         torch.load(config.pose_guider_path, map_location="cpu"),
     )
 
-    pipe:Pose2VideoPipeline = Pose2VideoPipeline(
+    pipe = Pose2VideoPipeline(
         vae=vae,
         image_encoder=image_enc,
         reference_unet=reference_unet,
