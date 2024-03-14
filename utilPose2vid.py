@@ -202,6 +202,7 @@ def generateVideo(args, pipe, generator, videoPosePath, ref_image_path, outVideo
 
 
 def main():
+    global pipe, generator
     args = parse_args()
 
     config = OmegaConf.load(args.config)
