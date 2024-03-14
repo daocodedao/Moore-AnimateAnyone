@@ -40,7 +40,7 @@ from utils.notify import *
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
-kMaxPoseVideoDuration = 3
+kMaxPoseVideoDuration = 6
 kFixedFps = 24
 
 
