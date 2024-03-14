@@ -29,6 +29,8 @@ from utils.Tos import TosService
 
 from utilVid2pose import *
 from utils.util import Util
+from utils.notify import *
+
 #  /data/work/Moore-AnimateAnyone/venv/bin/python -m utilPose2vid --config ./configs/prompts/animation.yaml -W 512 -H 784 --srcVideoPath './youtube/6TvTJIxZca4/6TvTJIxZca4.mp4' --refImagePath './configs/inference/ref_images/girl/' --processId '6TvTJIxZca4'
 
 
@@ -380,7 +382,16 @@ def main():
             TosService.upload_file(curVideoPath, reusultUrl, bucketName)
             KCDNPlayUrl="http://magicphoto.cdn.yuebanjyapp.com/"
             playUrl = f"{KCDNPlayUrl}{reusultUrl}"
-            api_logger.info(f"播放地址= {playUrl}")
+            
+
+            notiMsg = f"跳舞视频\n"
+            notiMsg = notiMsg + f"cdn播放地址: {playUrl}\n"
+            notiMsg = notiMsg + f"姿势视频:  https://youtu.be/{processId}\n"
+            notiMsg = notiMsg + f"图片: {refImageName}\n"
+            orginVideoUrl = playUrl.replace("http://magicphoto.cdn.yuebanjyapp.com/", "https://magicphoto-1315251136.cos.ap-hongkong.myqcloud.com/")
+            notiMsg = notiMsg + f"原始地址: {orginVideoUrl}\n"
+            NotifyUtil.notifyFeishu(notiMsg)
+            api_logger.info(notiMsg)
 
 
 
