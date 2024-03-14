@@ -42,7 +42,8 @@ cuda0 = "cuda:0"
 cuda1 = "cuda:1"
 kMaxPoseVideoDuration = 6
 kFixedFps = 24
-
+pipe = None
+generator = None
 
 def parse_args():
     parser = argparse.ArgumentParser()
