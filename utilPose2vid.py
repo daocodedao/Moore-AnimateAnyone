@@ -66,6 +66,7 @@ def parse_args():
     return args
 
 def initResource(args, config):
+    global pipe, generator 
     api_logger.info("初始化各种model")
     if config.weight_dtype == "fp16":
         weight_dtype = torch.bfloat16
@@ -351,7 +352,8 @@ def main():
                         api_logger.error(e)
                         time.sleep(5)
         else:
-            api_logger.info("已经存在，无需合成")
+            api_logger.info("已经存在，无需合成。跳过后续步骤")
+            continue
 
         api_logger.info("4---------结束-合成视频")
 
