@@ -38,7 +38,7 @@ from utils.util import Util
 dtype = torch.bfloat16
 cuda0 = "cuda:0"
 cuda1 = "cuda:1"
-kMaxPoseVideoDuration = 6
+kMaxPoseVideoDuration = 3
 kFixedFps = 24
 
 
@@ -244,7 +244,6 @@ def main():
     videoAudioInsPath = os.path.join(outDir, f"{processId}-ins.wav")
     
 
-
     # pose 切割视频输出文件夹
     outSplitDir = os.path.join(outDir, "split")
 
@@ -326,16 +325,21 @@ def main():
             poseVideoList.sort()
             for idx, video_path in enumerate(poseVideoList):
                 outVideoPath = os.path.join(outGenDir, f"{idx}.mp4")
-                try:
-                    generateVideo(args, pipe, generator, video_path, reImagePath, outVideoPath)
-                    if os.path.exists(outVideoPath):
-                        api_logger.info(f"生成视频成功，路径:{outVideoPath}")
-                        outVideoPathList.append(outVideoPath)
-                    else:
-                        api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
-                except Exception as e:
-                    api_logger.error(f"生成视频失败，路径:{outVideoPath}")
-                    api_logger.error(e)
+                for tryInx in range(.5):
+                    try:
+                        api_logger.info(f"开始合成视频，第{idx}个视频，第{tryInx}次尝试")
+                        generateVideo(args, pipe, generator, video_path, reImagePath, outVideoPath)
+                        if os.path.exists(outVideoPath):
+                            api_logger.info(f"生成视频成功，路径:{outVideoPath}")
+                            outVideoPathList.append(outVideoPath)
+                            break
+                        else:
+                            api_logger.info(f"生成视频失败，路径:{outVideoPath}不存在")
+                            time.sleep(5)
+                    except Exception as e:
+                        api_logger.error(f"生成视频失败，路径:{outVideoPath}")
+                        api_logger.error(e)
+                        time.sleep(5)
         else:
             api_logger.info("临时处理，无需合成")
 
